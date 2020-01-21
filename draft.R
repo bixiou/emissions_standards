@@ -16,12 +16,14 @@ setwd("Data/")
 ##### Data extraction ####
 pats <- read_csv("PATS_IPC-en.csv.zip")
 # Retain patents' IPC listed in Appendix B (Patent Search Strategies) of OECD (2011): Invention and Transfer of Environmental Technologies
-pats_env <- pats[pats$IPC %in% c("B01D", "B03C", "C10L", "C21B", "F01N", "F01N", "F23V", "F23C", "F23J", "G08B", "F23G", "B63J", "C02F", "C05F",
-                             "C09K", "E02B", "E03B", "E03C", "E03F", "C05F", "A23K", "A43B", "A61L", "B03B", "B09B", "B09C", "B22F", "B27B",
-                             "B29B", "B30B", "B26D", "B65F", "B65H", "C04B", "C05F", "C09K", "C09K", "C10G", "C10L", "C10M", "C22B", "D01B",
-                             "D01G", "D21B", "D21C", "D21H", "E01H", "F23G", "B01D", "F02B", "F02M", "F01N", "F02D", "G01M", "F02M", "F02P",
-                             "F01M", "B01D", "B01J", "B62D", "B60C", "B60T", "B60G", "B60K", "B60W", "B60L", "B60R", "B60S", "H01M", "F02B",
-                             "B62D", "B30B", "D21B", "B29B", "C08J", "A23K", "B03B", "B30B", "B65D", "C03B", "C03C", "C05F", "C09K", "B09B", "F23G"),]
+env_technos <- c("B01D", "B03C", "C10L", "C21B", "F01N", "F01N", "F23V", "F23C", "F23J", "G08B", "F23G", "B63J", "C02F", "C05F",
+  "C09K", "E02B", "E03B", "E03C", "E03F", "C05F", "A23K", "A43B", "A61L", "B03B", "B09B", "B09C", "B22F", "B27B",
+  "B29B", "B30B", "B26D", "B65F", "B65H", "C04B", "C05F", "C09K", "C09K", "C10G", "C10L", "C10M", "C22B", "D01B",
+  "D01G", "D21B", "D21C", "D21H", "E01H", "F23G", "B01D", "F02B", "F02M", "F01N", "F02D", "G01M", "F02M", "F02P",
+  "F01M", "B01D", "B01J", "B62D", "B60C", "B60T", "B60G", "B60K", "B60W", "B60L", "B60R", "B60S", "H01M", "F02B",
+  "B62D", "B30B", "D21B", "B29B", "C08J", "A23K", "B03B", "B30B", "B65D", "C03B", "C03C", "C05F", "C09K", "B09B", "F23G")
+# Remove columns with unique values: Unit Code: NBR; PowerCode: 0; Reference Period Code: 2013; Flag Codes: NA
+pats_env <- pats[pats$IPC %in% env_technos, !(colnames(pats) %in% c('Unit Code', 'PowerCode Code', 'Reference Period Code', 'Flag Codes'))]
 write_tsv(pats_env, "pats_env.tsv")
 rm(pats)
 
@@ -128,5 +130,58 @@ rm(co2_17)
 
 
 ##### Data loading #####
-pats_env <- read_tsv("pats_env.csv")
+pats_env <- read_tsv("pats_env.tsv")
 co2_17 <- read_tsv("co2_17_main.tsv")
+
+
+##### Analysis of env patents #####
+pats_per_year <- pats_env %>% group_by(TIME) %>% summarise(n = sum(Value))
+plot(pats_per_year[10:37,], type='l') + grid()
+plot(pats_per_year[30:35,], type='l') + grid()
+
+EU_countries <- c("AUT", "BEL", "CZE", "DNK", "FIN", "FRA", "DEU", "GRC", "HUN", 
+                  "IRL", "ITA", "LUX", "NLD", "POL", "PRT", "SVK", "ESP", "SWE", 
+                  "GBR", "E15", "BGR", "HRV", "CYP", "SLV", "EST", "LVA", "LTU",
+                  "ROU", "SVN", "EU28")
+# alternative fuel vehicles
+afv_technos <- c("B60L", "B60K", "B60W", "B60R", "B60S", "H01M", "F02B", "F02D", "F02M")
+# improved vehicle design
+ivd_technos <- c("B62D", "B60C", "B60T", "B60G", "B60K", "B60W") # "C10L": octane-enhancers? No, increase fuel consumption
+# improved engine design
+ied_technos <- c("F02B", "F02M", "F01N", "F02D", "G01M", "F02P")
+
+pats_afv_per_year <- pats_env %>% filter(IPC %in% afv_technos) %>% group_by(TIME) %>% summarise(n = sum(Value))
+pats_ivd_per_year <- pats_env %>% filter(IPC %in% ivd_technos) %>% group_by(TIME) %>% summarise(n = sum(Value))
+pats_ied_per_year <- pats_env %>% filter(IPC %in% ied_technos) %>% group_by(TIME) %>% summarise(n = sum(Value))
+
+plot(pats_afv_per_year[10:37,], type='l', col='blue') + grid()
+plot(pats_ivd_per_year[10:37,], type='l', col='red') + grid()
+plot(pats_ied_per_year[10:37,], type='l', col='green') + grid()
+
+# pats_per_year_EU <- pats_env %>% filter(LOCATION %in% EU_countries) %>% group_by(TIME) %>% summarise(n = sum(Value))
+# pats_afv_per_year_EU <- pats_env %>% filter(IPC %in% afv_technos, LOCATION %in% EU_countries) %>% group_by(TIME) %>% summarise(n = sum(Value))
+# pats_ivd_per_year_EU <- pats_env %>% filter(IPC %in% ivd_technos, LOCATION %in% EU_countries) %>% group_by(TIME) %>% summarise(n = sum(Value))
+# pats_ied_per_year_EU <- pats_env %>% filter(IPC %in% ied_technos, LOCATION %in% EU_countries) %>% group_by(TIME) %>% summarise(n = sum(Value))
+pats_per_year_EU <- pats_env %>% filter(LOCATION == "EU28") %>% group_by(TIME) %>% summarise(n = sum(Value))
+pats_afv_per_year_EU <- pats_env %>% filter(IPC %in% afv_technos, LOCATION == "EU28") %>% group_by(TIME) %>% summarise(n = sum(Value))
+pats_ivd_per_year_EU <- pats_env %>% filter(IPC %in% ivd_technos, LOCATION == "EU28") %>% group_by(TIME) %>% summarise(n = sum(Value))
+pats_ied_per_year_EU <- pats_env %>% filter(IPC %in% ied_technos, LOCATION == "EU28") %>% group_by(TIME) %>% summarise(n = sum(Value))
+plot(pats_per_year_EU[10:37,], type='l') + grid()
+plot(pats_afv_per_year_EU[10:37,], type='l', col='blue') + grid()
+plot(pats_ivd_per_year_EU[10:37,], type='l', col='red') + grid()
+plot(pats_ied_per_year_EU[10:37,], type='l', col='green') + grid()
+
+pats_per_year_EU <- pats_env %>% filter(LOCATION == "EU28") %>% group_by(TIME) %>% summarise(n = sum(Value))
+pats_per_year_EU_applicants <- pats_env %>% filter(LOCATION == "EU28", KINDCOUNTRY == 'APPLICANTS') %>% group_by(TIME) %>% summarise(n = sum(Value))
+pats_per_year_EU_inventors <- pats_env %>% filter(LOCATION == "EU28", KINDCOUNTRY == 'INVENTORS') %>% group_by(TIME) %>% summarise(n = sum(Value))
+pats_per_year_EU_application <- pats_env %>% filter(LOCATION == "EU28", KINDDATE == 'APPLICATION') %>% group_by(TIME) %>% summarise(n = sum(Value))
+pats_per_year_EU_priority <- pats_env %>% filter(LOCATION == "EU28", KINDDATE == 'PRIORITY') %>% group_by(TIME) %>% summarise(n = sum(Value))
+pats_per_year_EU_grant <- pats_env %>% filter(LOCATION == "EU28", KINDDATE == 'GRANT') %>% group_by(TIME) %>% summarise(n = sum(Value))
+plot(pats_per_year_EU[10:37,], type='l', ylim = c(0, 160000)) + grid()
+lines(pats_per_year_EU_applicants[10:37,], type='l', col='blue') + grid()
+lines(pats_per_year_EU_inventors[10:37,], type='l', col='red') + grid()
+plot(pats_per_year_EU[10:37,], type='l', ylim = c(0, 160000)) + grid()
+lines(pats_per_year_EU_priority[10:37,], type='l', col='red') + grid()
+lines(pats_per_year_EU_application[10:37,], type='l', col='blue') + grid()
+lines(pats_per_year_EU_grant[10:37,], type='l', col='green') + grid()
+
